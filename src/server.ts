@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import { KubeConfig, CoreV1Api, V1Pod, V1ObjectMeta, V1Container ,V1Namespace} from '@kubernetes/client-node';
+import express, { Request, Response, response } from 'express';
+import { KubeConfig, CoreV1Api, V1Pod, V1ObjectMeta, V1Container , V1Deployment ,V1Namespace, AppsV1Api} from '@kubernetes/client-node';
 import differenceInDays from "date-fns/differenceInDays";
 const app = express();
 const port = 2000;
@@ -13,6 +13,7 @@ app.use(express.json());
 const kubeConfig = new KubeConfig();
 kubeConfig.loadFromDefault();
 // Create the Kubernetes API client
+const appsV1Api = kubeConfig.makeApiClient(AppsV1Api)
 const coreV1Api = kubeConfig.makeApiClient(CoreV1Api);
 
 // API endpoint to create a pod
@@ -115,15 +116,67 @@ app.get('/api/namespaces/:name', async (req: Request, res: Response) => {
       
       const date = getNamespaceResponse.body.metadata?.creationTimestamp
       
-    
-      const upTime =  date && differenceInDays(now,date)
-      console.log(upTime)
+
+
+      
+      
     } catch (err) {
       console.error('Error retrieving namespace information:', err);
       res.status(500).json({ error: 'Failed to retrieve namespace information' });
     }
   });
+
+
+
+app.post('/api/namespace:name/deployment' , async(req: Request , res: Response) => {
+  const {name  , image } = req.body
+  const namespaceName = req.params.body
+  const deployment = {
+    apiVersion: 'apps/v1',
+    kind: 'Deployment',
+    metadata: {
+      namespace: namespaceName,
+      name: name,
+    },
+    spec: {
+      replicas: 1,
+      selector: {
+        matchLabels: {
+          app: 'my-app',
+        },
+      },
+      template: {
+        metadata: {
+          labels: {
+            app: 'my-app',
+          },
+        },
+        spec: {
+          containers: [
+            {
+              name: 'my-container',
+              image: image,
+            },
+          ],
+        },
+      },
+    },
+  };
+  appsV1Api.createNamespacedDeployment('default', deployment)
+  .then((response) => {
+    console.log(`Created deployment ${deployment.metadata.name}`);
+    res.status(200).json(`created Deployment ${deployment.metadata.name}`)
+  })
+  .catch((err) => {
+    console.error('Error:', err);
+    res.status(500).json(err)
+  });
+
+
+})
 // Start the server
+
+
 
 
 app.listen(port, () => {
