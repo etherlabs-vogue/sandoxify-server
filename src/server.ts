@@ -1,6 +1,9 @@
 import express, { Request, Response, response } from 'express';
 import { KubeConfig, CoreV1Api, V1Pod, V1ObjectMeta, V1Container , V1Deployment ,V1Namespace, AppsV1Api} from '@kubernetes/client-node';
 import differenceInDays from "date-fns/differenceInDays";
+import yaml from 'js-yaml';
+import * as fs from 'fs'
+
 const app = express();
 const port = 2000;
 
@@ -174,6 +177,53 @@ app.post('/api/namespace:name/deployment' , async(req: Request , res: Response) 
 
 
 })
+
+app.post('/api/labs/objectstoage',async(req: Request , res: Response) => {
+  const {accessKey , secretKey , namespaceName } = req.body
+  parsedataforLab1('./Labs/obejctStoageLab.yaml',accessKey ,secretKey , )
+  const deployment = yaml.load(fs.readFileSync('./Labs/obejctStoageLab.yaml'))
+  
+  appsV1Api.createNamespacedDeployment(namespaceName, deployment)
+  .then((response) => {
+    console.log(`Created deployment ${deployment.metadata.name}`);
+    res.status(200).json(`created Deployment ${deployment.metadata.name}`)
+  })
+  .catch((err) => {
+    console.error('Error:', err);
+  });
+
+
+
+})
+function parsedataforLab1(filePath: string, accessKey: string, secretKey: string ): void {
+  try {
+    // Read the YAML file
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+
+    // Parse the YAML file
+    const deployment = yaml.load(fileContents);
+
+    // Add the AccessKey and SecretKey environment variables
+    if (deployment && deployment[0] && deployment[0].spec && deployment[0].spec.template &&
+        deployment[0].spec.template.spec && deployment[0].spec.template.spec.containers &&
+        deployment[0].spec.template.spec.containers.length > 0 &&
+        deployment[0].spec.template.spec.containers[0].env) {
+      const envVariables = deployment[0].spec.template.spec.containers[0].env;
+      envVariables.push({ name: 'MINIO_ACCESS_KEY', value: accessKey })
+      envVariables.push({ name: 'MINIO_SECRET_KEY', value: secretKey })
+    }
+
+    // Convert the modified deployment back to YAML
+    const updatedYaml = yaml.dump(deployment);
+
+    // Overwrite the YAML file with the updated content
+    fs.writeFileSync(filePath, updatedYaml, 'utf8');
+
+    console.log('YAML file updated successfully.');
+  } catch (error) {
+    console.error('Error updating YAML file:', error);
+  }
+}
 // Start the server
 
 
