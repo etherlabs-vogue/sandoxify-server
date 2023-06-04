@@ -131,41 +131,13 @@ app.get('/api/namespaces/:name', async (req: Request, res: Response) => {
 
 
 
-app.post('/api/namespace:name/deployment' , async(req: Request , res: Response) => {
-  const {name  , image } = req.body
-  const namespaceName = req.params.body
-  const deployment = {
-    apiVersion: 'apps/v1',
-    kind: 'Deployment',
-    metadata: {
-      namespace: namespaceName,
-      name: name,
-    },
-    spec: {
-      replicas: 1,
-      selector: {
-        matchLabels: {
-          app: 'my-app',
-        },
-      },
-      template: {
-        metadata: {
-          labels: {
-            app: 'my-app',
-          },
-        },
-        spec: {
-          containers: [
-            {
-              name: 'my-container',
-              image: image,
-            },
-          ],
-        },
-      },
-    },
-  };
-  appsV1Api.createNamespacedDeployment('default', deployment)
+app.post('/api/namespace/deployment' , async(req: Request , res: Response) => {
+  const {name  , image , namespace } = req.body
+  const deployment = yaml.load(fs.readFileSync('./Labs/Deployment.yaml'))
+  deployment.metadata.name = name
+  deployment.spec.template.spec.containers.image = image
+  console.log(deployment)
+  appsV1Api.createNamespacedDeployment(namespace, deployment)
   .then((response) => {
     console.log(`Created deployment ${deployment.metadata.name}`);
     res.status(200).json(`created Deployment ${deployment.metadata.name}`)
@@ -180,54 +152,35 @@ app.post('/api/namespace:name/deployment' , async(req: Request , res: Response) 
 
 app.post('/api/labs/objectstoage',async(req: Request , res: Response) => {
   const {accessKey , secretKey , namespaceName } = req.body
-  parsedataforLab1('./Labs/obejctStoageLab.yaml',accessKey ,secretKey , )
-  const deployment = yaml.load(fs.readFileSync('./Labs/obejctStoageLab.yaml'))
+  const deployment = yaml.load(fs.readFileSync('./Labs/ObjectStorage/obejctStoageLab.yaml'))
   
-  appsV1Api.createNamespacedDeployment(namespaceName, deployment)
+  deployment.spec.template.spec.containers[0].env[0].value = accessKey
+  deployment.spec.template.spec.containers[0].env[0].value = secretKey
+  const updatedDeployment = yaml.dump(deployment)
+  const deployment1 = yaml.load(updatedDeployment)
+  const serviceDeployment =  yaml.load(fs.readFileSync('./Labs/ObjectStorage/Service.yaml'))
+
+  // Deploy Minio
+  appsV1Api.createNamespacedDeployment(namespaceName, deployment1)
+  // Deploy Minio Service
+  coreV1Api.createNamespacedService(namespaceName , serviceDeployment)
   .then((response) => {
-    console.log(`Created deployment ${deployment.metadata.name}`);
-    res.status(200).json(`created Deployment ${deployment.metadata.name}`)
+    console.log(`Created deployment ${deployment1.metadata.name}`);
+    res.status(200).json(`created Deployment ${deployment1.metadata.name}`)
   })
   .catch((err) => {
     console.error('Error:', err);
   });
+  res.status(200).json("created anything")
 
 
 
 })
-function parsedataforLab1(filePath: string, accessKey: string, secretKey: string ): void {
-  try {
-    // Read the YAML file
-    const fileContents = fs.readFileSync(filePath, 'utf8');
 
-    // Parse the YAML file
-    const deployment = yaml.load(fileContents);
 
-    // Add the AccessKey and SecretKey environment variables
-    if (deployment && deployment[0] && deployment[0].spec && deployment[0].spec.template &&
-        deployment[0].spec.template.spec && deployment[0].spec.template.spec.containers &&
-        deployment[0].spec.template.spec.containers.length > 0 &&
-        deployment[0].spec.template.spec.containers[0].env) {
-      const envVariables = deployment[0].spec.template.spec.containers[0].env;
-      envVariables.push({ name: 'MINIO_ACCESS_KEY', value: accessKey })
-      envVariables.push({ name: 'MINIO_SECRET_KEY', value: secretKey })
-    }
 
-    // Convert the modified deployment back to YAML
-    const updatedYaml = yaml.dump(deployment);
 
-    // Overwrite the YAML file with the updated content
-    fs.writeFileSync(filePath, updatedYaml, 'utf8');
-
-    console.log('YAML file updated successfully.');
-  } catch (error) {
-    console.error('Error updating YAML file:', error);
-  }
-}
 // Start the server
-
-
-
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

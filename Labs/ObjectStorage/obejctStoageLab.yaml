@@ -20,9 +20,10 @@ spec:
             - containerPort: 9000
           env:
             - name: MINIO_ACCESS_KEY
-              value: your-access-key
+              value: "your-access-key"
             - name: MINIO_SECRET_KEY
-              value: your-secret-key
+              value: "your-secret-key"
+          args: ["server", "/data"]
           volumeMounts:
             - name: minio-data
               mountPath: /data
