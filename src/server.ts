@@ -258,6 +258,13 @@ app.post('/api/storage/pv',async(req: Request , res: Response) =>{
 
 })
 
+app.delete('/api/storage/pv',async(req: Request , res: Response) =>{
+
+
+
+
+})
+
 
 
 
