@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vlad
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: vlad
+  name: minio-service
+spec:
+  selector:
+    app: my-minio-fs
+  ports:
+    - name: minio
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: vlad
+  name: my-minio-fs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-minio-fs
+  template:
+    metadata:
+      labels:
+        app: my-minio-fs
+    spec:
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: my-minio-fs-pvc
+      containers:
+      - name: my-minio-fs
+        volumeMounts:
+        - name: data 
+          mountPath: "/data"
+        image: minio/minio:RELEASE.2017-11-22T19-55-46Z
+        args:
+        - server
+        - /data
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: "minio"
+        - name: MINIO_SECRET_KEY
+          value: "minio123"
+        ports:
+        - containerPort: 9000
+          hostPort: 9000
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: vlad
+  name: my-minio-fs-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /path/to/host/folder

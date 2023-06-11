@@ -108,3 +108,14 @@
   - Status: 200
   - Body: A success message.
 
+
+
+
+ fs.rm("./tempfile.yaml", { recursive: true }, (err) => { 
+      if (err) { 
+        console.error(err);
+      } 
+      else { 
+        console.log("Non Recursive: Directory Deleted!"); 
+      } 
+    })

@@ -1,0 +1,81 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ NamespaceName }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ NamespaceName }}
+  name: minio-{{ labId }}-service
+spec:
+  selector:
+    app: {{ app }}
+  ports:
+    - name: minio
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-{{ labId }}-pvc
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: ./data/{{ labId }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: {{ NamespaceName }}
+  name: minio-{{ labId }}-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ NamespaceName }}
+  name: lab-{{ labId }}-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ app }}
+  template:
+    metadata:
+      labels:
+        app: {{ app }}
+    spec:
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: minio-{{ labId }}-pvc
+      containers:
+        - name: my-minio-fs
+          volumeMounts:
+            - name: data 
+              mountPath: "/data"
+          image: minio/minio:RELEASE.2017-11-22T19-55-46Z
+          args:
+            - server
+            - /data
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: {{ accessKey }}
+            - name: MINIO_SECRET_KEY
+              value: {{ secretKey }}
+
