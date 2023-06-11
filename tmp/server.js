@@ -22,6 +22,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -31,6 +40,8 @@ const zod_1 = require("zod");
 const child_process_1 = require("child_process");
 const handlebars_1 = __importDefault(require("handlebars"));
 const fs = __importStar(require("fs"));
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 const LAbobject = zod_1.z.object({
     namespaceName: zod_1.z.string().min(3).max(10).refine((val) => val.toLowerCase() === val, {
         message: 'Namespace name must be in lowercase'
@@ -61,6 +72,19 @@ function executeKubectl(command) {
         });
     });
 }
+function createDeplyomentinDB(namespace, app, accessKey, secretKey) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const deployment = yield prisma.lab.create({
+            data: {
+                namespaceName: namespace,
+                app: app,
+                accessKey: accessKey,
+                secretKet: secretKey,
+            },
+        });
+        console.log(`added namespace: ${namespace} To the DB`);
+    });
+}
 app.post('/api/labs/objectstorage', (req, res) => {
     try {
         const { namespaceName, labId, app, accessKey, secretKey } = LAbobject.parse(req.body);
@@ -74,6 +98,7 @@ app.post('/api/labs/objectstorage', (req, res) => {
             secretKey: secretKey
         };
         const output = template(data);
+        createDeplyomentinDB(namespaceName, app, accessKey, secretKey);
         console.log(output);
         fs.writeFileSync('tempfile.yaml', output, 'utf8');
         executeKubectl('kubectl apply -f ./tempfile.yaml')
@@ -121,6 +146,8 @@ app.get('/api/info/:namespace', (req, res) => {
         .catch((err) => {
         res.send(500).json(err);
     });
+});
+app.get('/api/db/list', (res, req) => {
 });
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);

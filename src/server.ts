@@ -1,8 +1,11 @@
 import express, { Request, Response } from 'express';
-import { z } from 'zod';
+import { string, z } from 'zod';
 import { exec } from 'child_process';
 import Handlebars from 'handlebars';
 import * as fs from 'fs';
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+
 
 const LAbobject = z.object({
   namespaceName: z.string().min(3).max(10).refine((val) => val.toLowerCase() === val, {
@@ -38,6 +41,34 @@ function executeKubectl(command: string): Promise<string> {
   });
 }
 
+async function createDeplyomentinDB(namespace, app , accessKey , secretKey ){
+  const deployment = await prisma.lab.create({
+    data: {
+      namespaceName: namespace,
+      app: app,
+      accessKey: accessKey,
+      secretKet: secretKey,
+    },
+  })
+  console.log(`added namespace: ${namespace} To the DB`)
+  
+}
+
+
+async function createLabType(title , description) {
+  const labType = await prisma.labType.create({
+    data:{
+    title: title,
+    description: description
+  },
+})
+console.log("added LabType")
+}
+
+
+
+
+
 app.post('/api/labs/objectstorage', (req: Request, res: Response) => {
   try {
     const { namespaceName, labId, app, accessKey, secretKey } = LAbobject.parse(req.body);
@@ -52,6 +83,7 @@ app.post('/api/labs/objectstorage', (req: Request, res: Response) => {
       secretKey: secretKey
     };
     const output = template(data);
+    createDeplyomentinDB(namespaceName,app,accessKey,secretKey)
     console.log(output);
     fs.writeFileSync('tempfile.yaml', output, 'utf8');
 
@@ -108,6 +140,14 @@ app.get('/api/info/:namespace',(req:Request,res:Response)=>{
   })
 
 });
+
+
+app.post('/api/labtypes/add',(res:Response , req:Request)=>{
+
+
+
+})
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

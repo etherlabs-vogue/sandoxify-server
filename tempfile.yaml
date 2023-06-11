@@ -2,16 +2,16 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: bla
+  name: nla
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: bla
-  name: minio-200-service
+  namespace: nla
+  name: minio-190-service
 spec:
   selector:
-    app: minio
+    app: blabla
   ports:
     - name: minio
       protocol: TCP
@@ -22,21 +22,21 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: minio-200-pvc
+  name: minio-190-pvc
 spec:
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: ./data/200
+    path: ./data/190
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  namespace: bla
-  name: minio-200-pvc
+  namespace: nla
+  name: minio-190-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -48,22 +48,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: bla
-  name: lab-200-deployment
+  namespace: nla
+  name: lab-190-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app: blabla
   template:
     metadata:
       labels:
-        app: minio
+        app: blabla
     spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: minio-200-pvc
+          claimName: minio-190-pvc
       containers:
         - name: my-minio-fs
           volumeMounts:
@@ -75,7 +75,7 @@ spec:
             - /data
           env:
             - name: MINIO_ACCESS_KEY
-              value: blablalba
+              value: dasdasdas
             - name: MINIO_SECRET_KEY
-              value: blabllablalb
+              value: dasdasdasdasdas
 
