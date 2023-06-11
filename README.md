@@ -1,121 +1,82 @@
+Sure! Here's an example README.md file based on the code snippet you provided:
 
+```markdown
+# Express Server for Kubernetes Operations
 
+This is a Node.js Express server that allows you to perform various Kubernetes operations through REST API endpoints. It provides functionality for deploying and deleting lab objects in a Kubernetes cluster, as well as retrieving information about namespaces.
 
-## Functions
+## Prerequisites
 
-### Create a Pod
+- Node.js (v12 or higher)
+- `kubectl` command-line tool installed and configured
 
-- **Endpoint:** `POST /api/pods`
-- **Description:** Creates a new pod in the Kubernetes cluster.
-- **Request Body:**
+## Installation
+
+1. Clone the repository:
+
+   ```shell
+   git clone https://github.com/your-username/express-kubernetes-server.git
+   ```
+
+2. Install the dependencies:
+
+   ```shell
+   cd express-kubernetes-server
+   npm install
+   ```
+
+3. Modify the `Labs/Test/ObjectStorageLab.yaml` file to suit your needs. This file contains the template for the lab object to be deployed in Kubernetes.
+
+4. Start the server:
+
+   ```shell
+   npm start
+   ```
+
+   The server will start listening on port 2090 by default. You can modify the port by changing the `PORT` constant in the `index.ts` file.
+
+## API Endpoints
+
+### Deploy Lab Object
+
+- Endpoint: POST `/api/labs/objectstorage`
+- Request Body:
+
   ```json
   {
-    "name": "my-pod",
-    "image": "my-image"
-  }
-  ```
-- **Response:**
-  - Status: 201
-  - Body: The created pod object.
-
-### Delete a Pod
-
-- **Endpoint:** `DELETE /api/pods/:name`
-- **Description:** Deletes the specified pod from the Kubernetes cluster.
-- **Parameters:**
-  - `name`: Name of the pod to delete.
-- **Response:**
-  - Status: 200
-  - Body: A success message.
-
-### Create a Namespace
-
-- **Endpoint:** `POST /api/namespaces`
-- **Description:** Creates a new namespace in the Kubernetes cluster.
-- **Request Body:**
-  ```json
-  {
-    "name": "my-namespace"
-  }
-  ```
-- **Response:**
-  - Status: 201
-  - Body: The created namespace object.
-
-### Delete a Namespace
-
-- **Endpoint:** `DELETE /api/namespaces/:name`
-- **Description:** Deletes the specified namespace from the Kubernetes cluster.
-- **Parameters:**
-  - `name`: Name of the namespace to delete.
-- **Response:**
-  - Status: 200
-  - Body: A success message.
-
-### Get Namespace Information
-
-- **Endpoint:** `GET /api/namespaces/:name`
-- **Description:** Retrieves information about the specified namespace.
-- **Parameters:**
-  - `name`: Name of the namespace.
-- **Response:**
-  - Status: 200
-  - Body: The namespace information.
-
-### Create a Deployment in a Namespace
-
-- **Endpoint:** `POST /api/namespace/:name/deployment`
-- **Description:** Creates a new deployment in the specified namespace.
-- **Parameters:**
-  - `name`: Name of the namespace to create the deployment in.
-- **Request Body:**
-  ```json
-  {
-    "name": "my-deployment",
-    "image": "my-image"
-  }
-  ```
-- **Response:**
-  - Status: 200
-  - Body: A success message.
-
-### Delete a Deployment in a Namespace
-
-- **Endpoint:** `DELETE /api/namespace/:namespace/deployment/:deployment`
-- **Description:** Deletes the specified deployment from the specified namespace.
-- **Parameters:**
-  - `namespace`: Name of the namespace.
-  - `deployment`: Name of the deployment to delete.
-- **Response:**
-  - Status: 200
-  - Body: A success message.
-
-### Create Lab for Object Storage
-
-- **Endpoint:**
-
- `POST /api/labs/objectstoage`
-- **Description:** Creates a lab deployment for object storage.
-- **Request Body:**
-  ```json
-  {
+    "namespaceName": "my-namespace",
+    "labId": 123,
+    "app": "my-app",
     "accessKey": "my-access-key",
-    "secretKey": "my-secret-key",
-    "namespaceName": "my-namespace"
+    "secretKey": "my-secret-key"
   }
   ```
-- **Response:**
-  - Status: 200
-  - Body: A success message.
 
+- Response: HTTP 200 OK
+  - Body: "Deployed Lab"
 
+### Delete Lab Object
 
+- Endpoint: DELETE `/api/labs/objectstorage`
+- Request Body: Same as the deploy endpoint
+- Response: HTTP 200 OK
+  - Body: "Lab deleted"
 
- fs.rm("./tempfile.yaml", { recursive: true }, (err) => { 
-      if (err) { 
-        console.error(err);
-      } 
-      else { 
-        console.log("Non Recursive: Directory Deleted!"); 
-      } 
-    })
+### Get Namespace Info
+
+- Endpoint: GET `/api/info/:namespace`
+- URL Parameter: `namespace` - The name of the namespace to retrieve information about
+- Response: HTTP 200 OK
+  - Body: JSON object containing namespace information
+
+## Error Handling
+
+- If a request fails validation against the specified schema, a 400 Bad Request response will be returned with a JSON object containing the validation errors.
+- If there is an error executing a `kubectl` command, a 500 Internal Server Error response will be returned with an error message.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+```
+
+Please note that the README.md file should be customized according to your specific project requirements, including additional information, instructions, and appropriate license details.
